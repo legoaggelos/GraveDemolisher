@@ -1591,6 +1591,7 @@ public class Application extends javafx.application.Application {
         }.start();
         stage.setScene(gameScene);
         stage.setFullScreen(true);
+        stage.setTitle("Grave Demolisher 1.0 Initial Release");
         stage.show();
         stage.setOnCloseRequest(e -> {
             try {
