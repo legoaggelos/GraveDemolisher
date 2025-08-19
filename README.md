@@ -7,15 +7,15 @@ Demolish as many as you can.
 1.0 (initial release) was made in 2 weeks.    
 It is probably filled with bugs.     
 The 1.0 jar works on windows.    
-Not on linux.    
-Can't confirm if it works on MacOS.    
-I will make it work on linux too. Soon. There are also a lot of more things I want to add, just not soon.    
+
+The 2.0 jar works on windows, and is much better than the 1.0 one.
+It probably works on linux and mac as well, but havent tested.
       
 This game is inspired by "Grave Puncher", a game in the show Randy Cunningham: 9th Grade Ninja.     
      
-This was made with javafx 22 and java 22.     
+This was made with javafx 22 and java 21.     
       
-Minimum requirements will come with linux suport.   
+Minimum requirements will come ... sometime.
 
 If you encounter any bugs add them as an issue!
      
