@@ -2,12 +2,14 @@ package org.legoaggelos.app;
 
 import javafx.animation.AnimationTimer;
 import javafx.geometry.Pos;
+import javafx.scene.media.Media;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
+import javafx.scene.media.MediaPlayer;
 import javafx.scene.paint.Color;
 import javafx.scene.text.*;
 import javafx.scene.text.Font;
@@ -27,6 +29,7 @@ import org.legoaggelos.util.player.HandleCallHandler;
 import org.legoaggelos.util.player.RectanglePolygonFactory;
 import org.legoaggelos.time.NanoTime;
 import org.legoaggelos.time.TimerTime;
+
 
 import java.io.File;
 import java.io.FileWriter;
@@ -54,7 +57,6 @@ public class Application extends javafx.application.Application {
         stage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
         Pane gameComponents = new Pane();
         GameStateHandler game = new GameStateHandler(stage);
-
         //Player player = new Player(90.0,45.0,((double) 128 /2)-10,38.0,30.0,30.0,((double) 128 /2)+5,8.0,15,45.0,((double) 128 /2)+5,38+22.5,33.0,33.0,((double) 128 /2)+50,44.0,false,Color.BEIGE,Color.RED,Color.BEIGE,Color.WHITE);
         //RectanglePolygonFactory testHitbox = new RectanglePolygonFactory(128,90,0,90);
         //Player player = new Player(63.28125,45.0,((double) 90 /2)-22.5,116.71875,21.09375,21.09375,((double) 90 /2),91.09375,12,45,((double) 90 /2)+5,116.71875+22.5,25,25,((double) 90 /2)+50,116.71875+10,false,Color.BEIGE,Color.RED,Color.BEIGE,Color.WHITE);
@@ -82,11 +84,12 @@ public class Application extends javafx.application.Application {
         }.start();
         stage.setScene(game.getGuiHolder().getGameScene());
         stage.setFullScreen(true);
-        stage.setTitle("Grave Demolisher 1.0 Initial Release");
+        stage.setTitle("Grave Demolisher 2.0");
         stage.show();
         stage.setOnCloseRequest(e -> {
             FileHandler.overwriteHighScores(game.getPlayerHighScores());
         });
+
         logger.info("Main game window appeared.");
     }
 

@@ -12,6 +12,7 @@ import org.legoaggelos.objects.entities.EntityHandler;
 import org.legoaggelos.objects.entities.player.HandPosition;
 import org.legoaggelos.objects.entities.player.Player;
 import org.legoaggelos.objects.entities.player.PlayerCount;
+import org.legoaggelos.sound.SoundHandler;
 import org.legoaggelos.time.NanoTime;
 import org.legoaggelos.time.TimerTime;
 import org.legoaggelos.util.ArrayListUtils;
@@ -52,6 +53,7 @@ public class GameStateHandler {
     private final HandleCallHandler handleCallHandler = new HandleCallHandler();
     private double timeBeforeLastEscape = 0;
     private final ChangeableBoolean isGameBeaten = new ChangeableBoolean(false);
+    private final SoundHandler soundHandler;
 
     private void loadDifficulties() {
         getDifficultyFromTime.put(60, Difficulty.EASY);
@@ -73,6 +75,7 @@ public class GameStateHandler {
         playerHighScores = loadHighScores();
         guiHolder = new GraveDemolisherGuiComponentsHolder(stage, time);
         entityHandler = new EntityHandler(guiHolder.getGameComponents());
+        soundHandler = new SoundHandler(List.of("/sounds/TNS Vret - track 1.m4a"));
         initialiseQuitFunctions();
         initialiseDifficultySelectFunctions();
         initialiseLeaveGame();
@@ -191,18 +194,23 @@ public class GameStateHandler {
     public void initialiseDifficultySelectFunctions() {
         guiHolder.getEasySelect().setOnMouseClicked(event -> {
             difficultySelect(Difficulty.EASY);
+            soundHandler.setTrackToRepeat(0);
         });
         guiHolder.getMediumSelect().setOnMouseClicked(event -> {
             difficultySelect(Difficulty.MEDIUM);
+            soundHandler.setTrackToRepeat(0);
         });
         guiHolder.getHardSelect().setOnMouseClicked(event -> {
             difficultySelect(Difficulty.HARD);
+            soundHandler.setTrackToRepeat(0);
         });
         guiHolder.getImpossibleSelect().setOnMouseClicked(event -> {
             difficultySelect(Difficulty.IMPOSSIBLE);
+            soundHandler.setTrackToRepeat(0);
         });
         guiHolder.getPlayFreeplay().setOnMouseClicked(event -> {
             difficultySelect(Difficulty.FREEPLAY);
+            soundHandler.setTrackToRepeat(0);
         });
     }
 
@@ -298,7 +306,9 @@ public class GameStateHandler {
         if (!handleCallHandler.shouldTick((short) 24)) {
             return;
         }
-        System.out.println(p2HasJoinedSession.bool());
+        if (guiHolder.getGameScene().getRoot().equals(guiHolder.getMainMenuComponents())) {
+            soundHandler.stopTrack(0);
+        }
         handleCallHandler.setLastHandleCall(System.currentTimeMillis());
         long before = System.nanoTime();
         if (!(timeInBetweenHandleCalls.getNanoTime() == 0)) {

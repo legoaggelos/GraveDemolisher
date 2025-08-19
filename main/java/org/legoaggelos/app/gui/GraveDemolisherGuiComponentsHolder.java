@@ -69,6 +69,7 @@ public class GraveDemolisherGuiComponentsHolder {
     private Text creditsTitle;
     private Text creditsLegoaggelos;
     private Text creditsJedElinoffScotthomas;
+    private Text creditsTns;
     private Text credits;
     private Text backFromCredits;
     private VBox escapeMenu;
@@ -210,15 +211,18 @@ public class GraveDemolisherGuiComponentsHolder {
         creditsJedElinoffScotthomas = new Text("Jed Elinoff, Scott Thomas - Making the show that inspired this game(RC9GN)");
         textInit(creditsJedElinoffScotthomas, Color.GRAY, Font.font(50), null, creditsJedElinoffScotthomas.getTranslateY() + 10);
 
+        creditsTns = new Text("Thanasis Vrettakos - Music composer/performer");
+        textInit(creditsTns, Color.GRAY, Font.font(50), null, creditsTns.getTranslateY() + 10);
+
         credits = new Text("Credits");
         textInit(credits, Color.GRAY, Font.font(75), null, credits.getTranslateY() + 350);
         credits.setOnMouseClicked(e -> stage.getScene().setRoot(creditsVBox));
 
         backFromCredits = new Text("Back");
-        textInit(backFromCredits, Color.GRAY, Font.font(75), null, 720.0);
+        textInit(backFromCredits, Color.GRAY, Font.font(75), null, 650.0);
         backFromCredits.setOnMouseClicked(e -> stage.getScene().setRoot(optionsVBox));
 
-        creditsVBox.getChildren().addAll(creditsTitle, creditsLegoaggelos, creditsJedElinoffScotthomas, backFromCredits);
+        creditsVBox.getChildren().addAll(creditsTitle, creditsLegoaggelos, creditsJedElinoffScotthomas, creditsTns, backFromCredits);
     }
 
     private void initOptions(Stage stage) {
