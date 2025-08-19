@@ -1,2 +1,3 @@
 1. Replace usage of old Time and io APIs with Period/custom class and nio.
 2. Add the ability to change music volume
+3. (biggest one) make the game work in (almost) any resolution
