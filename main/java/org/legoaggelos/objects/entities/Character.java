@@ -7,7 +7,7 @@ import javafx.scene.shape.Shape;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class Character {
+public abstract class  Character {
     protected Polygon character;
     public Character(Polygon polygon, double translateX, double translateY) {
         this.character = polygon;

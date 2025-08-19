@@ -1,18 +1,25 @@
 package org.legoaggelos.objects.entities.player;
 
+import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Polygon;
+import org.legoaggelos.objects.Grave;
 import org.legoaggelos.objects.entities.Character;
 import org.legoaggelos.exceptions.PlayerNumberOutOfBoundsException;
 import org.legoaggelos.exceptions.PlayerTwoWithoutPlayerOneException;
+import org.legoaggelos.util.ChangeableBoolean;
+import org.legoaggelos.util.Counter;
+import org.legoaggelos.util.player.Direction;
 import org.legoaggelos.util.player.RectanglePolygonFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import static org.legoaggelos.app.Application.*;
+
 public class Player extends Character {
-    public static final HashMap<PlayerCount, Boolean> hasPlayerXJoined=new HashMap<>();
+    public static final HashMap<PlayerCount, Boolean> hasPlayerXJoined = new HashMap<>();
     private final PlayerPart playerHead;
     private final PlayerPart playerBody;
     private final PlayerPart playerArm;
@@ -34,44 +41,56 @@ public class Player extends Character {
     private final double playerLegWidth;
     private final double legDistance;
     private HandPosition isAttacking;
-    public Player(double bodyHeight, double bodyWidth, double bodyTranslateX, double bodyTranslateY,double headHeight, double headWidth, double headTranslateX, double headTranslateY,double armHeight, double armWidth, double armTranslateX, double armTranslateY,double fistHeight, double fistWidth, double fistTranslateX, double fistTranslateY, boolean hidePlayerHand, double legHeight, double legWidth, double legOneTranslateX, double legOneTranslateY, double legDistance, Color initialArmColor, Color initialFistColor, Color initialHeadColor, Color initialBodyColor, Color initialLegColor) throws PlayerNumberOutOfBoundsException,PlayerTwoWithoutPlayerOneException{
-        super(new Polygon(0),0,0);
-        this.bodyHeight=bodyHeight;
-        this.bodyWidth=bodyWidth;
-        this.headHeight=headHeight;
-        this.headWidth=headWidth;
-        this.armHeight=armHeight;
-        this.armWidth=armWidth;
-        this.fistHeight=fistHeight;
-        this.fistWidth=fistWidth;
-        this.playerLegWidth=legWidth;
-        this.playerLegHeight=legHeight;
-        this.legDistance=legDistance;
-        if(hasPlayerXJoined.getOrDefault(PlayerCount.PLAYER_1,false)&&hasPlayerXJoined.getOrDefault(PlayerCount.PLAYER_2,false)){
+    private HashMap<PlayerCount, KeyCode[]> playerMovementKeycodes; // Array is [go up, go down, go left, go right, attack]. Both is for F12 to add/remove player 2
+    private HashMap<Direction, Double> distanceToMovePerDirection;
+    private PlayerCount playerIndex;
+    private final Counter globalMoveCounter = new Counter(11);
+    private final Counter attackingCounter = new Counter(-1);
+    private final Counter moveAfterGraveRespawn = new Counter(-1);
+    private final Dot playerCanMoveUtility = new Dot(new RectanglePolygonFactory(1, 1, -10000, -10000).getNewPolygon(), -10000, -10000);
+    private final ChangeableBoolean isGraveInTheWay = new ChangeableBoolean(false);//in method
+
+    public Player(double bodyHeight, double bodyWidth, double bodyTranslateX, double bodyTranslateY, double headHeight, double headWidth, double headTranslateX, double headTranslateY, double armHeight, double armWidth, double armTranslateX, double armTranslateY, double fistHeight, double fistWidth, double fistTranslateX, double fistTranslateY, boolean hidePlayerHand, double legHeight, double legWidth, double legOneTranslateX, double legOneTranslateY, double legDistance, Color initialArmColor, Color initialFistColor, Color initialHeadColor, Color initialBodyColor, Color initialLegColor) throws PlayerNumberOutOfBoundsException, PlayerTwoWithoutPlayerOneException {
+        super(new Polygon(0), 0, 0);
+        this.bodyHeight = bodyHeight;
+        this.bodyWidth = bodyWidth;
+        this.headHeight = headHeight;
+        this.headWidth = headWidth;
+        this.armHeight = armHeight;
+        this.armWidth = armWidth;
+        this.fistHeight = fistHeight;
+        this.fistWidth = fistWidth;
+        this.playerLegWidth = legWidth;
+        this.playerLegHeight = legHeight;
+        this.legDistance = legDistance;
+        this.playerIndex = PlayerCount.NONE;
+        if (hasPlayerXJoined.getOrDefault(PlayerCount.PLAYER_1, false) && hasPlayerXJoined.getOrDefault(PlayerCount.PLAYER_2, false)) {
             throw new PlayerNumberOutOfBoundsException("Invalid player count!");
-        } else if (hasPlayerXJoined.getOrDefault(PlayerCount.PLAYER_1,false)&&!hasPlayerXJoined.getOrDefault(PlayerCount.PLAYER_2,false)) {
-            hasPlayerXJoined.put(PlayerCount.PLAYER_2,true);
-        } else if(!hasPlayerXJoined.getOrDefault(PlayerCount.PLAYER_1,false)&&!hasPlayerXJoined.getOrDefault(PlayerCount.PLAYER_2,false)){
-            hasPlayerXJoined.put(PlayerCount.PLAYER_1,true);
-        } else if(!hasPlayerXJoined.getOrDefault(PlayerCount.PLAYER_1,false)&&hasPlayerXJoined.getOrDefault(PlayerCount.PLAYER_2,false)){
+        } else if (hasPlayerXJoined.getOrDefault(PlayerCount.PLAYER_1, false) && !hasPlayerXJoined.getOrDefault(PlayerCount.PLAYER_2, false)) {
+            hasPlayerXJoined.put(PlayerCount.PLAYER_2, true);
+            playerIndex = PlayerCount.PLAYER_2;
+        } else if (!hasPlayerXJoined.getOrDefault(PlayerCount.PLAYER_1, false) && !hasPlayerXJoined.getOrDefault(PlayerCount.PLAYER_2, false)) {
+            hasPlayerXJoined.put(PlayerCount.PLAYER_1, true);
+            playerIndex = PlayerCount.PLAYER_1;
+        } else if (!hasPlayerXJoined.getOrDefault(PlayerCount.PLAYER_1, false) && hasPlayerXJoined.getOrDefault(PlayerCount.PLAYER_2, false)) {
             throw new PlayerTwoWithoutPlayerOneException("Player 2 can not be playing without player 1!");
         }
         super.setCharacter((Polygon) null);
-        playerHead=new PlayerPart(new RectanglePolygonFactory(headWidth,headHeight,headTranslateX,headTranslateY).getNewPolygon());
-        playerBody=new PlayerPart(new RectanglePolygonFactory(bodyWidth,bodyHeight,bodyTranslateX,bodyTranslateY).getNewPolygon());
-        playerLegOne=new PlayerPart(new RectanglePolygonFactory(playerLegWidth,playerLegHeight,legOneTranslateX,legOneTranslateY).getNewPolygon());
-        playerLegTwo=new PlayerPart(new RectanglePolygonFactory(playerLegWidth,playerLegHeight,legOneTranslateX+legDistance,legOneTranslateY).getNewPolygon());
-        if(hidePlayerHand){
-            playerArm=new PlayerPart(new RectanglePolygonFactory(armWidth,armHeight,-10000,-10000).getNewPolygon());
-            playerFist=new PlayerPart(new RectanglePolygonFactory(fistWidth,fistHeight,-10000,-10000).getNewPolygon());
-            playerArmIdle=new PlayerPart(new RectanglePolygonFactory(armHeight,armWidth-25,armTranslateX-11.25,armTranslateY).getNewPolygon());
-            playerFistIdle=new PlayerPart(new RectanglePolygonFactory(fistHeight,fistWidth,playerArmIdle.getTranslateX()-11.25, playerArmIdle.getTranslateY()+armWidth-30).getNewPolygon());
+        playerHead = new PlayerPart(new RectanglePolygonFactory(headWidth, headHeight, headTranslateX, headTranslateY).getNewPolygon());
+        playerBody = new PlayerPart(new RectanglePolygonFactory(bodyWidth, bodyHeight, bodyTranslateX, bodyTranslateY).getNewPolygon());
+        playerLegOne = new PlayerPart(new RectanglePolygonFactory(playerLegWidth, playerLegHeight, legOneTranslateX, legOneTranslateY).getNewPolygon());
+        playerLegTwo = new PlayerPart(new RectanglePolygonFactory(playerLegWidth, playerLegHeight, legOneTranslateX + legDistance, legOneTranslateY).getNewPolygon());
+        if (hidePlayerHand) {
+            playerArm = new PlayerPart(new RectanglePolygonFactory(armWidth, armHeight, -10000, -10000).getNewPolygon());
+            playerFist = new PlayerPart(new RectanglePolygonFactory(fistWidth, fistHeight, -10000, -10000).getNewPolygon());
+            playerArmIdle = new PlayerPart(new RectanglePolygonFactory(armHeight, armWidth - 25, armTranslateX - 11.25, armTranslateY).getNewPolygon());
+            playerFistIdle = new PlayerPart(new RectanglePolygonFactory(fistHeight, fistWidth, playerArmIdle.getTranslateX() - 11.25, playerArmIdle.getTranslateY() + armWidth - 30).getNewPolygon());
             changeHand(HandPosition.HIDE);
-        } else{
-            playerArm=new PlayerPart(new RectanglePolygonFactory(armWidth,armHeight,armTranslateX,armTranslateY).getNewPolygon());
-            playerFist=new PlayerPart(new RectanglePolygonFactory(fistWidth,fistHeight,fistTranslateX,fistTranslateY).getNewPolygon());
-            playerArmIdle=new PlayerPart(new RectanglePolygonFactory(armHeight,armWidth,-10000,-10000).getNewPolygon());
-            playerFistIdle=new PlayerPart(new RectanglePolygonFactory(fistHeight,fistWidth,-10000,-10000).getNewPolygon());
+        } else {
+            playerArm = new PlayerPart(new RectanglePolygonFactory(armWidth, armHeight, armTranslateX, armTranslateY).getNewPolygon());
+            playerFist = new PlayerPart(new RectanglePolygonFactory(fistWidth, fistHeight, fistTranslateX, fistTranslateY).getNewPolygon());
+            playerArmIdle = new PlayerPart(new RectanglePolygonFactory(armHeight, armWidth, -10000, -10000).getNewPolygon());
+            playerFistIdle = new PlayerPart(new RectanglePolygonFactory(fistHeight, fistWidth, -10000, -10000).getNewPolygon());
             changeHand(HandPosition.SHOW);
         }
         playerArm.getCharacter().setFill(initialArmColor);
@@ -84,66 +103,211 @@ public class Player extends Character {
         playerArmIdle.getCharacter().setFill(initialArmColor);
         playerFist.getCharacter().setTranslateZ(1);
         playerFistIdle.getCharacter().setTranslateZ(1);
-        player=new ArrayList<>();
-        isAttacking=getHandPositionFromBoolean(!hidePlayerHand);
-        player.addAll(List.of(playerHead,playerBody,playerLegOne,playerLegTwo,playerArm,playerFist,playerArmIdle,playerFistIdle));
+        player = new ArrayList<>();
+        isAttacking = getHandPositionFromBoolean(!hidePlayerHand);
+        player.addAll(List.of(playerHead, playerBody, playerLegOne, playerLegTwo, playerArm, playerFist, playerArmIdle, playerFistIdle));
+        playerMovementKeycodes = new HashMap<>();
+        distanceToMovePerDirection = new HashMap<>();
+        distanceToMovePerDirection.put(Direction.UP, -165D);
+        distanceToMovePerDirection.put(Direction.DOWN, 165D);
+        distanceToMovePerDirection.put(Direction.LEFT, -128D);
+        distanceToMovePerDirection.put(Direction.RIGHT, 128D);
+        //TODO potentially make this use enums for keycodes? with nested hashmaps
+        playerMovementKeycodes.put(PlayerCount.PLAYER_1, new KeyCode[]{KeyCode.W, KeyCode.S, KeyCode.A, KeyCode.D, KeyCode.X});
+        playerMovementKeycodes.put(PlayerCount.PLAYER_2, new KeyCode[]{KeyCode.UP, KeyCode.DOWN, KeyCode.LEFT, KeyCode.RIGHT, KeyCode.CONTROL});
+        playerMovementKeycodes.put(PlayerCount.NONE, new KeyCode[]{KeyCode.F12});
     }
-
-
+    public void stopAttacking() {
+        this.getAttackingCounter().resetCounter();
+        this.changeHand(HandPosition.HIDE);
+    }
+    public boolean shouldContinueAttacking() {
+        return this.getAttackingCounter().getCounter() > -1;
+    }
+    public void startAttacking() {
+        this.changeHand(HandPosition.SHOW);
+        this.getAttackingCounter().increaseCounter();
+    }
+    public boolean shouldPlayerNotContinueAttacking() {
+        return this.getAttackingCounter().getCounter() == -1 || this.getAttackingCounter().getCounter() >= 10;
+    }
+    public boolean canPlayerStartAttacking() {
+        return this.getGlobalMoveCounter().getCounter() > 2/*2 tick cooldown before moving and attacking.*/ && this.getAttackingCounter().getCounter()/*the player it attacking for 10 ticks, this means it is not attacking, values 0..10 are mid attack*/ == -1 && this.getMoveAfterGraveRespawn().getCounter() == -1/*must not be attacking while graves are respawning*/ && !this.isAttacking()/*player shouldnt start attack if he is already attacking.*/;
+    }
+    public KeyCode[] getPlayerMovementKeycodes() {
+        return playerMovementKeycodes.get(playerIndex);
+    }
     public boolean isAttacking() {
         return getBooleanFromHandPosition(isAttacking);
     }
 
     public void setAttacking(boolean attacking) {
-        isAttacking=getHandPositionFromBoolean(attacking);
+        isAttacking = getHandPositionFromBoolean(attacking);
     }
 
     public ArrayList<PlayerPart> getPlayer() {
         return player;
     }
 
-    public void changeHand(HandPosition hideOrShow){
-        if(hideOrShow==HandPosition.HIDE){
-            playerArmIdle.changePosition(playerBody.getTranslateX()+97-66-15, playerBody.getTranslateY()+120-110.46875);
-            playerFistIdle.changePosition(playerArmIdle.getTranslateX()-11.25, playerArmIdle.getTranslateY()+armWidth-30);
-            playerArm.changePosition(-10000,-10000);
-            playerFist.changePosition(-10000,-10000);
+    public void resetPlayerPosition() {
+        this.getPlayerBody().setTranslateX(66);
+        this.getPlayerBody().setTranslateY(50.46875 - 10 + 70);
+        this.getPlayerHead().setTranslateX(((double) 128 / 2) + 17);
+        this.getPlayerHead().setTranslateY(8.0 * 1.328125 + 62);
+        this.changeLegPositions(70, 220);
+        this.changeHand(HandPosition.HIDE);
+        for (PlayerPart player : player) {
+            player.getCharacter().toFront();
+        }
+    }
+    public boolean moveBasedOnInputs(List<Grave> graves, HashMap<KeyCode, Boolean> pressedKeys) throws InterruptedException {
+
+        double distanceToMoveY = 0;
+        double distanceToMoveX = 0;
+        var playerCount = playerIndex == PlayerCount.PLAYER_1 ? PlayerCount.PLAYER_1 : PlayerCount.PLAYER_2;
+        Direction direction = null;
+
+        if (pressedKeys.getOrDefault(playerMovementKeycodes.get(playerCount)[0], false) && !pressedKeys.getOrDefault(playerMovementKeycodes.get(playerCount)[1], false)) {
+            direction = Direction.UP;
+
+        } else if (pressedKeys.getOrDefault(playerMovementKeycodes.get(playerCount)[1], false) && !pressedKeys.getOrDefault(playerMovementKeycodes.get(playerCount)[0], false)) {
+
+            direction = Direction.DOWN;
+        } else if (pressedKeys.getOrDefault(playerMovementKeycodes.get(playerCount)[2], false) && !pressedKeys.getOrDefault(playerMovementKeycodes.get(playerCount)[3], false)) {
+            direction = Direction.LEFT;
+
+        } else if (pressedKeys.getOrDefault(playerMovementKeycodes.get(playerCount)[3], false) && !pressedKeys.getOrDefault(playerMovementKeycodes.get(playerCount)[2], false)) {
+            direction = Direction.RIGHT;
+
+        }
+
+        if (direction == Direction.UP || direction == Direction.DOWN) {
+            distanceToMoveY = distanceToMovePerDirection.get(direction);
+
+        }
+        if (direction == Direction.LEFT || direction == Direction.RIGHT) {
+            distanceToMoveX = distanceToMovePerDirection.get(direction);
+        }
+        return moveBasedOnInputs(graves, pressedKeys, distanceToMoveY, distanceToMoveX);
+    }
+
+    public ChangeableBoolean getIsGraveInTheWay() {
+        return isGraveInTheWay;
+    }
+
+    public Dot getPlayerCanMoveUtility() {
+        return playerCanMoveUtility;
+    }
+
+    public Counter getMoveAfterGraveRespawn() {
+        return moveAfterGraveRespawn;
+    }
+
+    public Counter getAttackingCounter() {
+        return attackingCounter;
+    }
+
+    public Counter getGlobalMoveCounter() {
+        return globalMoveCounter;
+    }
+
+    public boolean moveBasedOnInputs(List<Grave> graves, HashMap<KeyCode, Boolean> pressedKeys, double distanceToMoveY, double distanceToMoveX) throws InterruptedException { //move based on player count(this player also)... ughh
+        if (distanceToMoveY == 0 && distanceToMoveX == 0) {
+            return false;
+        }
+        Counter playerMoveAfterGraveRespawn = new Counter(0);
+
+        playerMoveAfterGraveRespawn.setCounter(moveAfterGraveRespawn.getCounter());
+
+
+        if ((this.getPlayerHead().getTranslateY() + distanceToMoveY < 1050 && this.getPlayerHead().getTranslateX() + distanceToMoveX < 1920) && (this.getPlayerHead().getTranslateY() + distanceToMoveY >= 0 && this.getPlayerHead().getTranslateX() + distanceToMoveX >= 0) && globalMoveCounter.getCounter() > 3 && playerMoveAfterGraveRespawn.getCounter() == -1) {
+
+
+            playerCanMoveUtility.setTranslateX(this.getPlayerBody().getTranslateX() + distanceToMoveX);
+            playerCanMoveUtility.setTranslateY(this.getPlayerBody().getTranslateY() + distanceToMoveY);
+
+
+            graves/*graves input of method*/.forEach(v -> {
+                if (v.colliding(playerCanMoveUtility)) {
+                    isGraveInTheWay.setBool(true);//input in method
+                }
+            });
+
+
+            playerCanMoveUtility.setTranslateX(this.getPlayerLegOne().getTranslateX() + distanceToMoveX);
+            playerCanMoveUtility.setTranslateY(this.getPlayerLegOne().getTranslateY() + distanceToMoveY + 70);
+
+
+            graves/*graves input of method*/.forEach(v -> {
+                if (v.colliding(playerCanMoveUtility)) {
+                    isGraveInTheWay.setBool(true);//input in method
+                }
+            });
+            if (!isGraveInTheWay.bool()) {
+                Thread.sleep(25);
+                this.moveHorizontally(distanceToMoveY);
+                this.moveVertically(distanceToMoveX);
+                globalMoveCounter.setCounter(-1);
+                this.changeHand(HandPosition.HIDE);
+                attackingCounter.setCounter(-1);
+                pressedKeys.put(playerMovementKeycodes.get(playerIndex)[4], false);
+            }
+            boolean isGraveInTheWayTemp = isGraveInTheWay.bool();
+            isGraveInTheWay.setBool(false);
+            playerCanMoveUtility.setTranslateX(-10000);
+            playerCanMoveUtility.setTranslateY(-10000);
+            return !isGraveInTheWayTemp;
+        }
+
+
+        return false;
+    }
+
+    public void changeHand(HandPosition hideOrShow) {
+        if (hideOrShow == HandPosition.HIDE) {
+            playerArmIdle.changePosition(playerBody.getTranslateX() + 97 - 66 - 15, playerBody.getTranslateY() + 120 - 110.46875);
+            playerFistIdle.changePosition(playerArmIdle.getTranslateX() - 11.25, playerArmIdle.getTranslateY() + armWidth - 30);
+            playerArm.changePosition(-10000, -10000);
+            playerFist.changePosition(-10000, -10000);
             setAttacking(false);
         }
-        if(hideOrShow==HandPosition.SHOW){
-            playerArm.changePosition(playerBody.getTranslateX()+31, playerBody.getTranslateY()+9.53125);
-            playerFist.changePosition(playerBody.getTranslateX()+105,playerArm.getTranslateY()-11.25);
-            playerArmIdle.changePosition(-10000,-10000);
-            playerFistIdle.changePosition(-10000,-10000);
+        if (hideOrShow == HandPosition.SHOW) {
+            playerArm.changePosition(playerBody.getTranslateX() + 31, playerBody.getTranslateY() + 9.53125);
+            playerFist.changePosition(playerBody.getTranslateX() + 105, playerArm.getTranslateY() - 11.25);
+            playerArmIdle.changePosition(-10000, -10000);
+            playerFistIdle.changePosition(-10000, -10000);
             setAttacking(true);
         }
     }
-    public void moveHorizontally(double amount){
-        playerBody.setTranslateY(playerBody.getTranslateY()+amount);
-        playerHead.setTranslateY(playerHead.getTranslateY()+amount);
-        playerLegTwo.setTranslateY(playerLegTwo.getTranslateY()+amount);
-        playerLegOne.setTranslateY(playerLegOne.getTranslateY()+amount);
-        if(isAttacking()){
-            playerArm.setTranslateY(playerArm.getTranslateY()+amount);
-            playerFist.setTranslateY(playerFist.getTranslateY()+amount);
-        } else{
-            playerArmIdle.setTranslateY(playerArmIdle.getTranslateY()+amount);
-            playerFistIdle.setTranslateY(playerFistIdle.getTranslateY()+amount);
+
+    public void moveHorizontally(double amount) {
+        playerBody.setTranslateY(playerBody.getTranslateY() + amount);
+        playerHead.setTranslateY(playerHead.getTranslateY() + amount);
+        playerLegTwo.setTranslateY(playerLegTwo.getTranslateY() + amount);
+        playerLegOne.setTranslateY(playerLegOne.getTranslateY() + amount);
+        if (isAttacking()) {
+            playerArm.setTranslateY(playerArm.getTranslateY() + amount);
+            playerFist.setTranslateY(playerFist.getTranslateY() + amount);
+        } else {
+            playerArmIdle.setTranslateY(playerArmIdle.getTranslateY() + amount);
+            playerFistIdle.setTranslateY(playerFistIdle.getTranslateY() + amount);
         }
     }
-    public void moveVertically(double amount){
-        playerBody.setTranslateX(playerBody.getTranslateX()+amount);
-        playerHead.setTranslateX(playerHead.getTranslateX()+amount);
-        playerLegTwo.setTranslateX(playerLegTwo.getTranslateX()+amount);
-        playerLegOne.setTranslateX(playerLegOne.getTranslateX()+amount);
-        if(isAttacking()){
-            playerArm.setTranslateX(playerArm.getTranslateX()+amount);
-            playerFist.setTranslateX(playerFist.getTranslateX()+amount);
-        } else{
-            playerArmIdle.setTranslateX(playerArmIdle.getTranslateX()+amount);
-            playerFistIdle.setTranslateX(playerFistIdle.getTranslateX()+amount);
+
+    public void moveVertically(double amount) {
+        playerBody.setTranslateX(playerBody.getTranslateX() + amount);
+        playerHead.setTranslateX(playerHead.getTranslateX() + amount);
+        playerLegTwo.setTranslateX(playerLegTwo.getTranslateX() + amount);
+        playerLegOne.setTranslateX(playerLegOne.getTranslateX() + amount);
+        if (isAttacking()) {
+            playerArm.setTranslateX(playerArm.getTranslateX() + amount);
+            playerFist.setTranslateX(playerFist.getTranslateX() + amount);
+        } else {
+            playerArmIdle.setTranslateX(playerArmIdle.getTranslateX() + amount);
+            playerFistIdle.setTranslateX(playerFistIdle.getTranslateX() + amount);
         }
     }
+
     public PlayerPart getPlayerHead() {
         return playerHead;
     }
@@ -235,18 +399,22 @@ public class Player extends Character {
     public PlayerPart getPlayerLegOne() {
         return playerLegOne;
     }
+
     public PlayerPart getPlayerLegTwo() {
         return playerLegTwo;
     }
-    public void changeLegPositions(double newTranslateX, double newTranslateY){
-        playerLegOne.changePosition(newTranslateX,newTranslateY);
-        playerLegTwo.changePosition(newTranslateX+legDistance,newTranslateY);
+
+    public void changeLegPositions(double newTranslateX, double newTranslateY) {
+        playerLegOne.changePosition(newTranslateX, newTranslateY);
+        playerLegTwo.changePosition(newTranslateX + legDistance, newTranslateY);
     }
-    public boolean getBooleanFromHandPosition(HandPosition handPosition){
+
+    public boolean getBooleanFromHandPosition(HandPosition handPosition) {
         return handPosition == HandPosition.SHOW;
     }
-    public HandPosition getHandPositionFromBoolean(boolean bool){
-        if(bool){
+
+    public HandPosition getHandPositionFromBoolean(boolean bool) {
+        if (bool) {
             return HandPosition.SHOW;
         }
         return HandPosition.HIDE;

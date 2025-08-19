@@ -5,5 +5,14 @@ public enum Difficulty {
     MEDIUM,
     HARD,
     IMPOSSIBLE,
-    FREEPLAY
+    FREEPLAY;
+    public static int indexOf(Difficulty difficulty) {
+        return switch (difficulty) {
+            case EASY -> 0;
+            case MEDIUM -> 1;
+            case HARD -> 2;
+            case IMPOSSIBLE -> 3;
+            case FREEPLAY -> 4;
+        };
+    }
 }
