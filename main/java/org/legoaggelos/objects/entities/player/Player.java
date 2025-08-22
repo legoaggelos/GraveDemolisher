@@ -17,6 +17,8 @@ import java.util.HashMap;
 import java.util.List;
 
 import static org.legoaggelos.app.Application.*;
+import static org.legoaggelos.app.GameStateHandler.xResolutionRatio;
+import static org.legoaggelos.app.GameStateHandler.yResolutionRatio;
 
 public class Player extends Character {
     public static final HashMap<PlayerCount, Boolean> hasPlayerXJoined = new HashMap<>();
@@ -47,11 +49,12 @@ public class Player extends Character {
     private final Counter globalMoveCounter = new Counter(11);
     private final Counter attackingCounter = new Counter(-1);
     private final Counter moveAfterGraveRespawn = new Counter(-1);
-    private final Dot playerCanMoveUtility = new Dot(new RectanglePolygonFactory(1, 1, -10000, -10000).getNewPolygon(), -10000, -10000);
+    private final Dot playerCanMoveUtility;
     private final ChangeableBoolean isGraveInTheWay = new ChangeableBoolean(false);//in method
 
     public Player(double bodyHeight, double bodyWidth, double bodyTranslateX, double bodyTranslateY, double headHeight, double headWidth, double headTranslateX, double headTranslateY, double armHeight, double armWidth, double armTranslateX, double armTranslateY, double fistHeight, double fistWidth, double fistTranslateX, double fistTranslateY, boolean hidePlayerHand, double legHeight, double legWidth, double legOneTranslateX, double legOneTranslateY, double legDistance, Color initialArmColor, Color initialFistColor, Color initialHeadColor, Color initialBodyColor, Color initialLegColor) throws PlayerNumberOutOfBoundsException, PlayerTwoWithoutPlayerOneException {
         super(new Polygon(0), 0, 0);
+        playerCanMoveUtility = new Dot(new RectanglePolygonFactory(bodyWidth, bodyHeight, -10000, -10000).getNewPolygon(), -10000, -10000);
         this.bodyHeight = bodyHeight;
         this.bodyWidth = bodyWidth;
         this.headHeight = headHeight;
@@ -78,6 +81,9 @@ public class Player extends Character {
         super.setCharacter((Polygon) null);
         playerHead = new PlayerPart(new RectanglePolygonFactory(headWidth, headHeight, headTranslateX, headTranslateY).getNewPolygon());
         playerBody = new PlayerPart(new RectanglePolygonFactory(bodyWidth, bodyHeight, bodyTranslateX, bodyTranslateY).getNewPolygon());
+        System.out.println(bodyTranslateX +" "+ bodyTranslateY);
+        System.out.println(playerBody.getTranslateX() +" "+ playerBody.getTranslateY());
+
         playerLegOne = new PlayerPart(new RectanglePolygonFactory(playerLegWidth, playerLegHeight, legOneTranslateX, legOneTranslateY).getNewPolygon());
         playerLegTwo = new PlayerPart(new RectanglePolygonFactory(playerLegWidth, playerLegHeight, legOneTranslateX + legDistance, legOneTranslateY).getNewPolygon());
         if (hidePlayerHand) {
@@ -101,9 +107,11 @@ public class Player extends Character {
         playerLegTwo.getCharacter().setFill(initialLegColor);
         playerFistIdle.getCharacter().setFill(initialFistColor);
         playerArmIdle.getCharacter().setFill(initialArmColor);
+        playerBody.getCharacter().setTranslateZ(1);
         playerFist.getCharacter().setTranslateZ(1);
         playerFistIdle.getCharacter().setTranslateZ(1);
         player = new ArrayList<>();
+
         isAttacking = getHandPositionFromBoolean(!hidePlayerHand);
         player.addAll(List.of(playerHead, playerBody, playerLegOne, playerLegTwo, playerArm, playerFist, playerArmIdle, playerFistIdle));
         playerMovementKeycodes = new HashMap<>();
@@ -150,15 +158,18 @@ public class Player extends Character {
     }
 
     public void resetPlayerPosition() {
-        this.getPlayerBody().setTranslateX(66);
-        this.getPlayerBody().setTranslateY(50.46875 - 10 + 70);
+        this.getPlayerBody().setTranslateX(70 - (bodyWidth-playerLegWidth-legDistance*xResolutionRatio)/2.0*(1.0/xResolutionRatio));
+        this.getPlayerBody().setTranslateY(50.46875 - 10.9*(1.0/yResolutionRatio) + 70);
         this.getPlayerHead().setTranslateX(((double) 128 / 2) + 17);
         this.getPlayerHead().setTranslateY(8.0 * 1.328125 + 62);
         this.changeLegPositions(70, 220);
-        this.changeHand(HandPosition.HIDE);
-        for (PlayerPart player : player) {
-            player.getCharacter().toFront();
-        }
+        this.changeHand(HandPosition.HIDE, true);
+        playerBody.getCharacter().toFront();
+        playerArmIdle.getCharacter().toFront();
+        playerFistIdle.getCharacter().toFront();
+        playerArm.getCharacter().toFront();
+        playerFist.getCharacter().toFront();
+
     }
     public boolean moveBasedOnInputs(List<Grave> graves, HashMap<KeyCode, Boolean> pressedKeys) throws InterruptedException {
 
@@ -220,22 +231,22 @@ public class Player extends Character {
         playerMoveAfterGraveRespawn.setCounter(moveAfterGraveRespawn.getCounter());
 
 
-        if ((this.getPlayerHead().getTranslateY() + distanceToMoveY < 1050 && this.getPlayerHead().getTranslateX() + distanceToMoveX < 1920) && (this.getPlayerHead().getTranslateY() + distanceToMoveY >= 0 && this.getPlayerHead().getTranslateX() + distanceToMoveX >= 0) && globalMoveCounter.getCounter() > 3 && playerMoveAfterGraveRespawn.getCounter() == -1) {
+        if ((this.getPlayerHead().getTranslateY() + distanceToMoveY*yResolutionRatio < 1050*yResolutionRatio && this.getPlayerHead().getTranslateX() + distanceToMoveX*xResolutionRatio < 1920*xResolutionRatio) && (this.getPlayerHead().getTranslateY() + distanceToMoveY*yResolutionRatio >= 0 && this.getPlayerHead().getTranslateX() + distanceToMoveX*xResolutionRatio >= 0) && globalMoveCounter.getCounter() > 3 && playerMoveAfterGraveRespawn.getCounter() == -1) {
 
 
-            playerCanMoveUtility.setTranslateX(this.getPlayerBody().getTranslateX() + distanceToMoveX);
-            playerCanMoveUtility.setTranslateY(this.getPlayerBody().getTranslateY() + distanceToMoveY);
-
+            playerCanMoveUtility.getCharacter().setTranslateX(this.getPlayerBody().getTranslateX()+distanceToMoveX*xResolutionRatio);
+            playerCanMoveUtility.getCharacter().setTranslateY(this.getPlayerBody().getTranslateY()+distanceToMoveY*yResolutionRatio);
 
             graves/*graves input of method*/.forEach(v -> {
                 if (v.colliding(playerCanMoveUtility)) {
                     isGraveInTheWay.setBool(true);//input in method
+                    System.out.println(1);
                 }
             });
 
 
-            playerCanMoveUtility.setTranslateX(this.getPlayerLegOne().getTranslateX() + distanceToMoveX);
-            playerCanMoveUtility.setTranslateY(this.getPlayerLegOne().getTranslateY() + distanceToMoveY + 70);
+            playerCanMoveUtility.getCharacter().setTranslateX(this.getPlayerBody().getTranslateX() + distanceToMoveX*xResolutionRatio);
+            playerCanMoveUtility.getCharacter().setTranslateY(this.getPlayerLegOne().getTranslateY() + (distanceToMoveY + 70)*yResolutionRatio);
 
 
             graves/*graves input of method*/.forEach(v -> {
@@ -262,49 +273,55 @@ public class Player extends Character {
 
         return false;
     }
-
-    public void changeHand(HandPosition hideOrShow) {
+    public void changeHand(HandPosition position) {
+        changeHand(position, false);
+    }
+    public void changeHand(HandPosition hideOrShow, boolean override) {
+        if (hideOrShow == isAttacking && !override) {
+            return;
+        }
         if (hideOrShow == HandPosition.HIDE) {
-            playerArmIdle.changePosition(playerBody.getTranslateX() + 97 - 66 - 15, playerBody.getTranslateY() + 120 - 110.46875);
-            playerFistIdle.changePosition(playerArmIdle.getTranslateX() - 11.25, playerArmIdle.getTranslateY() + armWidth - 30);
+            playerArmIdle.changePosition((playerBody.getTranslateX() + 20)*(1.0/xResolutionRatio), (playerBody.getTranslateY() + 10)*(1.0/yResolutionRatio)); //when in relation to other player parts, we dont want to adjust for resolution ratio, so we dont
+            playerFistIdle.changePosition((playerArmIdle.getTranslateX() - 11)*(1.0/xResolutionRatio) /*(fistWidth - armWidth)/16*(1.0/xResolutionRatio)*/, (playerArmIdle.getTranslateY() )*(1.0/yResolutionRatio)+ 70); //this last one neds just the additive to not be adjusted, i dont know why, it is my fault, but it works like this
             playerArm.changePosition(-10000, -10000);
             playerFist.changePosition(-10000, -10000);
             setAttacking(false);
         }
         if (hideOrShow == HandPosition.SHOW) {
-            playerArm.changePosition(playerBody.getTranslateX() + 31, playerBody.getTranslateY() + 9.53125);
-            playerFist.changePosition(playerBody.getTranslateX() + 105, playerArm.getTranslateY() - 11.25);
-            playerArmIdle.changePosition(-10000, -10000);
-            playerFistIdle.changePosition(-10000, -10000);
-            setAttacking(true);
-        }
+              //playerArm.changePosition(playerBody.getTranslateX()+(21)*(1.0/xResolutionRatio), (playerBody.getTranslateY() + 15.53125)*(1.0/yResolutionRatio));
+              playerArm.changePosition((playerBody.getTranslateX() + 20)*(1.0/xResolutionRatio), (playerBody.getTranslateY()+20)*(1.0/yResolutionRatio));
+              playerFist.changePosition((playerBody.getTranslateX() + 90)*(1.0/xResolutionRatio), (playerArm.getTranslateY() - 11.25)*(1.0/yResolutionRatio));
+              playerArmIdle.changePosition(-10000, -10000);
+              playerFistIdle.changePosition(-10000, -10000);
+              setAttacking(true);
+          }
     }
 
     public void moveHorizontally(double amount) {
-        playerBody.setTranslateY(playerBody.getTranslateY() + amount);
-        playerHead.setTranslateY(playerHead.getTranslateY() + amount);
-        playerLegTwo.setTranslateY(playerLegTwo.getTranslateY() + amount);
-        playerLegOne.setTranslateY(playerLegOne.getTranslateY() + amount);
+        playerBody.moveY(amount);
+        playerHead.moveY(amount);
+        playerLegTwo.moveY(amount);
+        playerLegOne.moveY(amount);
         if (isAttacking()) {
-            playerArm.setTranslateY(playerArm.getTranslateY() + amount);
-            playerFist.setTranslateY(playerFist.getTranslateY() + amount);
+            playerArm.moveY(amount);
+            playerFist.moveY(amount);
         } else {
-            playerArmIdle.setTranslateY(playerArmIdle.getTranslateY() + amount);
-            playerFistIdle.setTranslateY(playerFistIdle.getTranslateY() + amount);
+            playerArmIdle.moveY(amount);
+            playerFistIdle.moveY(amount);
         }
     }
 
     public void moveVertically(double amount) {
-        playerBody.setTranslateX(playerBody.getTranslateX() + amount);
-        playerHead.setTranslateX(playerHead.getTranslateX() + amount);
-        playerLegTwo.setTranslateX(playerLegTwo.getTranslateX() + amount);
-        playerLegOne.setTranslateX(playerLegOne.getTranslateX() + amount);
+        playerBody.moveX(amount);
+        playerHead.moveX(amount);
+        playerLegTwo.moveX(amount);
+        playerLegOne.moveX(amount);
         if (isAttacking()) {
-            playerArm.setTranslateX(playerArm.getTranslateX() + amount);
-            playerFist.setTranslateX(playerFist.getTranslateX() + amount);
+            playerArm.moveX(amount);
+            playerFist.moveX(amount);
         } else {
-            playerArmIdle.setTranslateX(playerArmIdle.getTranslateX() + amount);
-            playerFistIdle.setTranslateX(playerFistIdle.getTranslateX() + amount);
+            playerArmIdle.moveX(amount);
+            playerFistIdle.moveX(amount);
         }
     }
 

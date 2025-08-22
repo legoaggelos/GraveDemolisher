@@ -17,7 +17,7 @@ import java.util.List;
 import static org.legoaggelos.app.Application.logger;
 
 public class EntityHandler {
-    final Player player = new Player(109.53125, 60.0, 66, 110.46875, 47.84375, 30.0, 81, 72.625, 19.921875, 110.0, 97, 120, 43.828125, 43.828125, 181, 108.75, true, 75, 20, 70, 220, 30, Color.BEIGE, Color.RED, Color.BEIGE, Color.WHITE, Color.LIGHTBLUE);
+    final Player player = new Player(110.53125, 60.0, 66, 110.46875, 47.84375, 30.0, 81, 72.625, 19.921875, 110.0, 97, 120, 43.828125, 43.828125, 181, 108.75, true, 75, 20, 70, 220, 30, Color.BEIGE, Color.RED, Color.BEIGE, Color.WHITE, Color.LIGHTBLUE);
     final Player[] players = {player, null};
     private final List<Grave> graves;
     public EntityHandler(Pane gameComponents)  {
@@ -44,7 +44,7 @@ public class EntityHandler {
         return players[1] != null;
     }
     public Player createPlayer2() {
-        players[1] = new Player(109.53125, 60.0, 66, 110.46875, 48.84375, 29.0, 81, 72.625, 19.921875, 110.0, 97, 120, 43.828125, 43.828125, 181, 108.75, true, 75, 20, 70, 220, 30, Color.BEIGE, Color.RED, Color.GREEN, Color.WHITE, Color.LIGHTBLUE);
+        players[1] = new Player(110.53125, 60.0, 66, 110.46875, 48.84375, 29.0, 81, 72.625, 19.921875, 110.0, 97, 120, 43.828125, 43.828125, 181, 108.75, true, 75, 20, 70, 220, 30, Color.BEIGE, Color.RED, Color.GREEN, Color.WHITE, Color.LIGHTBLUE);
         return players[1];
     }
     public Player getPlayer1() {

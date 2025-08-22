@@ -11,7 +11,7 @@ import java.util.Random;
 import java.util.random.RandomGenerator;
 
 public class SoundHandler {
-    private final double volume = 0.3;
+    private double volume = 0.3;
     private final List<MediaPlayer> tracks = new ArrayList<>();
     public SoundHandler(List<String> tracks) {
         for (String track : tracks) {
@@ -21,6 +21,18 @@ public class SoundHandler {
             mediaPlayer.stop();
             mediaPlayer.setVolume(volume);
             this.tracks.add(mediaPlayer);
+        }
+    }
+    public void muteAll() {
+        for (MediaPlayer mediaPlayer : tracks) {
+            mediaPlayer.setVolume(0);
+            mediaPlayer.setMute(true);
+        }
+    }
+    public void unmuteAll() {
+        for (MediaPlayer mediaPlayer : tracks) {
+            mediaPlayer.setVolume(volume);
+            mediaPlayer.setMute(false);
         }
     }
     public int playRandomTrack(RandomGenerator random) {
@@ -59,5 +71,21 @@ public class SoundHandler {
     public void stopAndRepeat(int index) {
         this.tracks.get(index).stop();
         this.tracks.get(index).play();
+    }
+    public double getVolume() {
+        return volume;
+    }
+
+    public void setVolume(double volume) {
+        this.volume = volume;
+    }
+
+    public void changeVolume(double change) {
+        this.volume += 0.1 * Math.floor(change*10);
+        if (volume < 0) {
+            volume = 0;
+        } else if(volume > 1) {
+            volume = 1;
+        }
     }
 }

@@ -4,18 +4,21 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyCode;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Shape;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import org.legoaggelos.app.Difficulty;
 import org.legoaggelos.objects.Grave;
 import org.legoaggelos.objects.entities.Character;
 import org.legoaggelos.objects.entities.player.HandPosition;
 import org.legoaggelos.objects.entities.player.Player;
+import org.legoaggelos.sound.SoundHandler;
 import org.legoaggelos.time.TimerTime;
 import org.legoaggelos.util.ChangeableBoolean;
 import org.legoaggelos.util.Counter;
@@ -33,21 +36,27 @@ import static org.legoaggelos.app.Application.logger;
 public class GraveDemolisherGuiComponentsHolder {
     private final Pane gameComponents = new Pane();
 
+    //Adjust for resolution in nodeInit.
     private void nodeInit(Shape node, Color color, Double x, Double y) {
         node.setFill(color);
         if (x != null) {
-            node.setTranslateX(x);
+            node.setTranslateX(x * xResolutionRatio);
         }
         if (y != null) {
-            node.setTranslateY(y);
+            node.setTranslateY(y * yResolutionRatio);
         }
+
     }
 
+    //Adjust for font resolution in textInit.
     private void textInit(Text node, Color color, Font font, Double x, Double y) {
         nodeInit(node, color, x, y);
-        node.setFont(font);
+        node.setFont(Font.font(font.getSize() * Math.max(xResolutionRatio, yResolutionRatio))); //If the aspect ratio is the same, these are equal. If it isnt, use the biggest one, so it the font isnt too tall/wide, just too short/thin which is better, because it prevents texts colliding
+
     }
 
+    private final double xResolutionRatio;
+    private final double yResolutionRatio;
     private final Text timer;
     private final VBox optionsVBox;
     private VBox mainMenuComponents;
@@ -99,8 +108,66 @@ public class GraveDemolisherGuiComponentsHolder {
     private Text hardSelect;
     private Text impossibleSelect;
     private Text backFromSelection;
-    private Scene gameScene;
-    private HashMap<KeyCode, Boolean> pressedKeys;
+    private final Scene gameScene;
+    private final HashMap<KeyCode, Boolean> pressedKeys;
+    private VBox musicVBox;
+    private HBox volumeHBox;
+    private Text gotoMusic;
+    private Text musicTitle;
+    private Text volumeState; //[----...--]
+    private Text volumeUp;
+    private Text volumeSwitch;
+    private Text volumeDown;
+    private Text backFromMusic;
+
+    public double getxResolutionRatio() {
+        return xResolutionRatio;
+    }
+
+    public double getyResolutionRatio() {
+        return yResolutionRatio;
+    }
+
+    public Text getCreditsTns() {
+        return creditsTns;
+    }
+
+    public VBox getMusicVBox() {
+        return musicVBox;
+    }
+
+    public HBox getVolumeHBox() {
+        return volumeHBox;
+    }
+
+    public Text getGotoMusic() {
+        return gotoMusic;
+    }
+
+    public Text getMusicTitle() {
+        return musicTitle;
+    }
+
+    public Text getVolumeState() {
+        return volumeState;
+    }
+
+    public Text getVolumeUp() {
+        return volumeUp;
+    }
+
+    public Text getVolumeSwitch() {
+        return volumeSwitch;
+    }
+
+    public Text getVolumeDown() {
+        return volumeDown;
+    }
+
+    public Text getBackFromMusic() {
+        return backFromMusic;
+    }
+
     private final Text controlsText = new Text("""
              Player 1
              W: Go Up
@@ -139,21 +206,21 @@ public class GraveDemolisherGuiComponentsHolder {
         mainMenuComponents.setAlignment(Pos.TOP_CENTER);
 
         title = new Text("GRAVE DEMOLISHER");
-        textInit(title, Color.GRAY, Font.font(150), null, title.getTranslateY() + 100);
+        textInit(title, Color.GRAY, Font.font(150), null, 100D);
 
         playSurvival = new Text("Play Survival");
-        textInit(playSurvival, Color.GRAY, Font.font(75), title.getTranslateX() - 10, title.getTranslateY() + 200);
+        textInit(playSurvival, Color.GRAY, Font.font(75), -10D, 300D);
 
         playFreeplay = new Text("Freeplay");
-        textInit(playFreeplay, Color.GRAY, Font.font(75), title.getTranslateX() - 10, title.getTranslateY() + 250);
+        textInit(playFreeplay, Color.GRAY, Font.font(75), -10D, 350D);
 
         options = new Text("Options");
-        textInit(options, Color.GRAY, Font.font(75), title.getTranslateX() - 10, title.getTranslateY() + 300);
+        textInit(options, Color.GRAY, Font.font(75), -10D, 400D);
 
         options.setOnMouseClicked(e -> stage.getScene().setRoot(optionsVBox));
 
         quit = new Text("Quit");
-        textInit(quit, Color.GRAY, Font.font(75), title.getTranslateX() - 10, title.getTranslateY() + 350);
+        textInit(quit, Color.GRAY, Font.font(75), -10D, 450D);
     }
 
     private void initHowToPlay(Stage stage) {
@@ -161,18 +228,18 @@ public class GraveDemolisherGuiComponentsHolder {
         howToPlay.setAlignment(Pos.TOP_CENTER);
 
         howToPlayTitle = new Text("How To Play");
-        textInit(howToPlayTitle, Color.GRAY, Font.font(75), null, howToPlayTitle.getTranslateY() - 980);
+        textInit(howToPlayTitle, Color.GRAY, Font.font(75), null, 0D);
 
-        textInit(howToPlayText, Color.GRAY, Font.font(45), null, howToPlayText.getTranslateY() + 50);
+        textInit(howToPlayText, Color.GRAY, Font.font(40), null, null);
 
         backFromHowToPlay = new Text("Back");
-        textInit(backFromHowToPlay, Color.GRAY, Font.font(75), null, howToPlayTitle.getTranslateY() + 870);
+        textInit(backFromHowToPlay, Color.GRAY, Font.font(75), null, null);
         backFromHowToPlay.setOnMouseClicked(e -> stage.getScene().setRoot(optionsVBox));
 
-        howToPlay.getChildren().addAll(howToPlayText, howToPlayTitle, backFromHowToPlay);
+        howToPlay.getChildren().addAll(howToPlayTitle, howToPlayText, backFromHowToPlay);
 
         guide = new Text("How To Play");
-        textInit(guide, Color.GRAY, Font.font(75), null, howToPlayText.getTranslateY() + 250);
+        textInit(guide, Color.GRAY, Font.font(75), null, 300D);
         guide.setOnMouseClicked(e -> stage.getScene().setRoot(howToPlay));
     }
 
@@ -180,21 +247,20 @@ public class GraveDemolisherGuiComponentsHolder {
         controls = new VBox();
         controls.setAlignment(Pos.TOP_CENTER);
 
-        textInit(controlsText, Color.GRAY, Font.font(50), null, controlsText.getTranslateY());
+        textInit(controlsText, Color.GRAY, Font.font(50), null, null);
 
 
         controlsTitle = new Text("Controls");
         textInit(controlsTitle, Color.GRAY, Font.font(75), null, 10D);
 
         backFromControls = new Text("Back");
-        textInit(backFromControls, Color.GRAY, Font.font(75), null, backFromControls.getTranslateY() - 80);
-
+        textInit(backFromControls, Color.GRAY, Font.font(75), null, -80D);
         backFromControls.setOnMouseClicked(e -> stage.getScene().setRoot(optionsVBox));
 
         controls.getChildren().addAll(controlsTitle, controlsText, backFromControls);
 
         gotoControls = new Text("Controls");
-        textInit(gotoControls, Color.GRAY, Font.font(75), null, gotoControls.getTranslateY() + 400);
+        textInit(gotoControls, Color.GRAY, Font.font(75), null, 350D);
         gotoControls.setOnMouseClicked(e -> stage.getScene().setRoot(controls));
     }
 
@@ -203,34 +269,72 @@ public class GraveDemolisherGuiComponentsHolder {
         creditsVBox.setAlignment(Pos.TOP_CENTER);
 
         creditsTitle = new Text("Credits");
-        textInit(creditsTitle, Color.GRAY, Font.font(75), null, creditsTitle.getTranslateY() + 10);
+        textInit(creditsTitle, Color.GRAY, Font.font(75), null, 10D);
 
         creditsLegoaggelos = new Text("legoaggelos - Coding, texturing, testing");
-        textInit(creditsLegoaggelos, Color.GRAY, Font.font(50), null, creditsLegoaggelos.getTranslateY() + 10);
+        textInit(creditsLegoaggelos, Color.GRAY, Font.font(50), null, 10D);
 
         creditsJedElinoffScotthomas = new Text("Jed Elinoff, Scott Thomas - Making the show that inspired this game(RC9GN)");
-        textInit(creditsJedElinoffScotthomas, Color.GRAY, Font.font(50), null, creditsJedElinoffScotthomas.getTranslateY() + 10);
+        textInit(creditsJedElinoffScotthomas, Color.GRAY, Font.font(50), null, 10D);
 
         creditsTns = new Text("Thanasis Vrettakos - Music composer/performer");
-        textInit(creditsTns, Color.GRAY, Font.font(50), null, creditsTns.getTranslateY() + 10);
+        textInit(creditsTns, Color.GRAY, Font.font(50), null, 10D);
 
         credits = new Text("Credits");
-        textInit(credits, Color.GRAY, Font.font(75), null, credits.getTranslateY() + 350);
+        textInit(credits, Color.GRAY, Font.font(75), null, 400D);
         credits.setOnMouseClicked(e -> stage.getScene().setRoot(creditsVBox));
 
         backFromCredits = new Text("Back");
-        textInit(backFromCredits, Color.GRAY, Font.font(75), null, 650.0);
+        textInit(backFromCredits, Color.GRAY, Font.font(75), null, 650D);
         backFromCredits.setOnMouseClicked(e -> stage.getScene().setRoot(optionsVBox));
 
         creditsVBox.getChildren().addAll(creditsTitle, creditsLegoaggelos, creditsJedElinoffScotthomas, creditsTns, backFromCredits);
+    }
+
+    private void initVolume(Stage stage) {
+        musicVBox = new VBox();
+        musicVBox.setAlignment(Pos.TOP_CENTER);
+        
+        musicTitle = new Text("Music");
+        textInit(musicTitle, Color.GRAY, Font.font(75), null, 10D);
+        
+        volumeSwitch = new Text("On"); //On by default, TODO add saving in files
+        textInit(volumeSwitch, Color.GRAY, Font.font(75), null, 100D);
+        
+        volumeHBox = new HBox();
+        volumeHBox.setAlignment(Pos.CENTER);
+        volumeHBox.setSpacing(50*xResolutionRatio);
+        volumeHBox.setTranslateY(125D*yResolutionRatio);
+        
+        volumeDown = new Text("<");
+        textInit(volumeDown, Color.GRAY, Font.font(85), null, null);
+        
+        volumeState = new Text("[ " + "-".repeat(20) + " ]");
+        textInit(volumeState, Color.GRAY, Font.font(75), null, null);
+        
+        volumeUp = new Text(">");
+        textInit(volumeUp, Color.GRAY, Font.font(85), null, null);
+        
+        volumeHBox.getChildren().addAll(volumeDown, volumeState, volumeUp);
+
+        backFromMusic = new Text("Back");
+        textInit(backFromMusic, Color.GRAY, Font.font(75), null, 630D);
+        backFromMusic.setOnMouseClicked(e -> stage.getScene().setRoot(optionsVBox));
+
+        musicVBox.getChildren().addAll(musicTitle, volumeSwitch, volumeHBox, backFromMusic);
+
+        gotoMusic = new Text("Audio");
+        textInit(gotoMusic, Color.GRAY, Font.font(75), null, 250D);
+        gotoMusic.setOnMouseClicked(e -> stage.getScene().setRoot(musicVBox));
     }
 
     private void initOptions(Stage stage) {
         //options
 
         optionsVBox.setAlignment(Pos.TOP_CENTER);
+
         backFromOptions = new Text("Back");
-        textInit(backFromOptions, Color.GRAY, Font.font(75), null, 650.0);
+        textInit(backFromOptions, Color.GRAY, Font.font(75), null, 550D);
         backFromOptions.setOnMouseClicked(e -> stage.getScene().setRoot(mainMenuComponents));
 
         initHowToPlay(stage);
@@ -239,15 +343,17 @@ public class GraveDemolisherGuiComponentsHolder {
 
         initCredits(stage);
 
+        initVolume(stage);
+
         mainMenuComponents.getChildren().addAll(title, playSurvival, playFreeplay, options, quit);
-        optionsVBox.getChildren().addAll(guide, credits, gotoControls, backFromOptions);
+        optionsVBox.getChildren().addAll(gotoMusic, guide, gotoControls, credits, backFromOptions);
     }
 
     private void initEscapeMenu(Stage stage) {
         escapeMenu = new VBox();
         escapeMenu.setAlignment(Pos.CENTER);
-        escapeMenu.setTranslateY(300);
-        escapeMenu.setTranslateX(770);
+        escapeMenu.setTranslateY(300 * yResolutionRatio);
+        escapeMenu.setTranslateX(770 * xResolutionRatio);
 
         resume = new Text("Resume");
         textInit(resume, Color.GRAY, Font.font(75), null, null);
@@ -264,62 +370,62 @@ public class GraveDemolisherGuiComponentsHolder {
     }
 
     private void initGraveRespawningText(Stage stage) {
-        graveRespawning = new Text((double) 1920 / 2 - 350, 60, "Graves Respawning...");
-        textInit(graveRespawning, Color.rgb(0, 77, 0), Font.font(80), null, null);
+        graveRespawning = new Text("Graves Respawning...");
+        textInit(graveRespawning, Color.rgb(0, 77, 0), Font.font(80), (double) 1920 / 2 - 350, 60D);
 
-        graveRespawned = new Text((double) 1920 / 2 - 350, 60, "Graves Respawned!");
-        textInit(graveRespawned, Color.rgb(0, 77, 0), Font.font(80), null, null);
+        graveRespawned = new Text("Graves Respawned!");
+        textInit(graveRespawned, Color.rgb(0, 77, 0), Font.font(80), (double) 1920 / 2 - 350, 60D);
     }
 
     private void initScoreText(Stage stage) {
-        score = new Text(0, 60, "Score: 00000");
-        textInit(score, Color.rgb(0, 77, 0), Font.font(70), null, null);
+        score = new Text("Score: 00000");
+        textInit(score, Color.rgb(0, 77, 0), Font.font(70), 0D, 60D);
 
-        highScore = new Text(1400, 60, "High Score: 00000");
-        textInit(highScore, Color.rgb(0, 77, 0), Font.font(60), null, null);
+        highScore = new Text("High Score: 00000");
+        textInit(highScore, Color.rgb(0, 77, 0), Font.font(60), 1400D, 60D);
 
-        bonus = new Text(400, 22, "");
-        textInit(bonus, Color.rgb(0, 77, 0), Font.font(28), null, null);
+        bonus = new Text("");
+        textInit(bonus, Color.rgb(0, 77, 0), Font.font(28), 400D, 22D);
 
         gameComponents.getChildren().addAll(score, timer, highScore);
     }
 
     private void initLogText(Stage stage) {
-        scoreLog = new Text(200, 77, "+1(Grave Demolished)");
-        textInit(scoreLog, Color.rgb(0, 77, 0), Font.font(17), null, null);
+        scoreLog = new Text("+1(Grave Demolished)");
+        textInit(scoreLog, Color.rgb(0, 77, 0), Font.font(17), 200D, 77D);
 
-        scoreLogClear = new Text(200, 92, "+100(Wave Cleared)");
-        textInit(scoreLogClear, Color.rgb(0, 77, 0), Font.font(17), null, null);
+        scoreLogClear = new Text("+100(Wave Cleared)");
+        textInit(scoreLogClear, Color.rgb(0, 77, 0), Font.font(17), 200D, 92D);
 
-        scoreLogBonus = new Text(200, 102, "+6(Bonus)");
-        textInit(scoreLogBonus, Color.rgb(0, 77, 0), Font.font(17), null, null);
+        scoreLogBonus = new Text("+6(Bonus)");
+        textInit(scoreLogBonus, Color.rgb(0, 77, 0), Font.font(17), 200D, 102D);
     }
 
     private void initClearText(Stage stage) {
-        waveClearedText = new Text((double) 1920 / 2 - 550, (double) 1080 / 2 - 60, "WAVE CLEARED!");
-        textInit(waveClearedText, Color.rgb(204, 255, 204), Font.font(175), null, null);
+        waveClearedText = new Text("WAVE CLEARED!");
+        textInit(waveClearedText, Color.rgb(204, 255, 204), Font.font(175), (double) 1920 / 2 - 550, (double) 1080 / 2 - 60);
     }
 
     private void initLossText(Stage stage) {
-        youLost = new Text((double) 1920 / 2 - 350, (double) 1080 / 2 - 180, "You Lost!");
-        textInit(youLost, Color.rgb(153, 0, 0), Font.font(175), null, null);
+        youLost = new Text("You Lost!");
+        textInit(youLost, Color.rgb(153, 0, 0), Font.font(175), (double) 1920 / 2 - 350, (double) 1080 / 2 - 180);
 
-        noTime = new Text((double) 1920 / 2 - 550, (double) 1080 / 2 - 60, "You ran out of time!");
-        textInit(noTime, Color.rgb(153, 0, 0), Font.font(150), null, null);
+        noTime = new Text("You ran out of time!");
+        textInit(noTime, Color.rgb(153, 0, 0), Font.font(150), (double) 1920 / 2 - 550, (double) 1080 / 2 - 60);
 
-        scoreResetRetry = new Text((double) 1920 / 2 - 525, (double) 1080 / 2 + 60, "Score Reset! Try again!");
-        textInit(scoreResetRetry, Color.rgb(140, 0, 0), Font.font(120), null, null);
+        scoreResetRetry = new Text("Score Reset! Try again!");
+        textInit(scoreResetRetry, Color.rgb(140, 0, 0), Font.font(120), (double) 1920 / 2 - 525, (double) 1080 / 2 + 60);
     }
 
     private void initWinText(Stage stage) {
-        youWon = new Text((double) 1920 / 2 - 725, (double) 1080 / 2 - 280, "You Beat The Game!");
-        textInit(youWon, Color.rgb(102, 255, 102), Font.font(175), null, null);
+        youWon = new Text("You Beat The Game!");
+        textInit(youWon, Color.rgb(102, 255, 102), Font.font(175), (double) 1920 / 2 - 725, (double) 1080 / 2 - 280);
 
-        noRanTime = new Text((double) 1920 / 2 - 825, (double) 1080 / 2 - 60, "You reached max score without \n       ever running out of time!");
-        textInit(noRanTime, Color.rgb(179, 89, 0), Font.font(125), null, null);
+        noRanTime = new Text("You reached max score without \n       ever running out of time!");
+        textInit(noRanTime, Color.rgb(179, 89, 0), Font.font(125), (double) 1920 / 2 - 825, (double) 1080 / 2 - 60);
 
-        beatingTheGame = new Text((double) 1920 / 2 - 825, (double) 1080 / 2 + 240, "Thank you for playing the game!\n       Press R to restart!");
-        textInit(beatingTheGame, Color.rgb(179, 89, 0), Font.font(125), null, null);
+        beatingTheGame = new Text("Thank you for playing the game!\n       Press R to restart!");
+        textInit(beatingTheGame, Color.rgb(179, 89, 0), Font.font(125), (double) 1920 / 2 - 825, (double) 1080 / 2 + 240);
     }
 
     private void initDifficultyMenu(Stage stage) {
@@ -342,7 +448,7 @@ public class GraveDemolisherGuiComponentsHolder {
         textInit(impossibleSelect, Color.rgb(68, 0, 89), Font.font(75), null, null);
 
         backFromSelection = new Text("Back");
-        textInit(backFromSelection, Color.GRAY, Font.font(75), null, 200.0);
+        textInit(backFromSelection, Color.GRAY, Font.font(75), null, 200D);
         backFromSelection.setOnMouseClicked(e -> stage.getScene().setRoot(mainMenuComponents));
 
         difficultySelection.getChildren().addAll(difficultySelectPrompt, easySelect, mediumSelect, hardSelect, impossibleSelect, backFromSelection);
@@ -350,9 +456,11 @@ public class GraveDemolisherGuiComponentsHolder {
         playSurvival.setOnMouseClicked(e -> stage.getScene().setRoot(difficultySelection));
     }
 
-    public GraveDemolisherGuiComponentsHolder(Stage stage, TimerTime time) {
-        timer = new Text((double) 1920 / 2 - 120, 60, time.toString());
-        textInit(timer, Color.rgb(37, 139, 0), Font.font(80), null, null);
+    public GraveDemolisherGuiComponentsHolder(Stage stage, TimerTime time, double xResolutionRatio, double yResolutionRatio, SoundHandler soundHandler) {
+        this.xResolutionRatio = xResolutionRatio;
+        this.yResolutionRatio = yResolutionRatio;
+        timer = new Text(time.toString());
+        textInit(timer, Color.rgb(37, 139, 0), Font.font(80), (double) 1920 / 2 - 120, 60D);
 
         optionsVBox = new VBox(); //early initialisation for menuing
 
@@ -365,7 +473,7 @@ public class GraveDemolisherGuiComponentsHolder {
         //Escape Menu
         initEscapeMenu(stage);
 
-        gameScene = new Scene(mainMenuComponents, 1920, 1080);
+        gameScene = new Scene(mainMenuComponents, 1920 * xResolutionRatio, 1080 * yResolutionRatio);
         stage.setScene(gameScene);
         gameScene.setFill(Color.rgb(38, 17, 0));
         pressedKeys = new HashMap<>();
@@ -513,6 +621,7 @@ public class GraveDemolisherGuiComponentsHolder {
     public void removeGraves(List<Grave> graves) {
         gameComponents.getChildren().removeAll(graves.stream().map(org.legoaggelos.objects.entities.Character::getCharacter).toList());
     }
+
     public void addGraves(List<Grave> graves) {
         if (!new HashSet<>(gameComponents.getChildren()).containsAll(graves.stream().map(Character::getCharacter).toList())) {
             gameComponents.getChildren().addAll(graves.stream().map(Character::getCharacter).toList());
@@ -522,8 +631,7 @@ public class GraveDemolisherGuiComponentsHolder {
     public void resetGameEnvironment(TimerTime time, int numOfZeroes, List<Integer> playerHighScores, Difficulty difficulty) {
         gameComponents.getChildren().remove(escapeMenu);
 
-        gameComponents.getChildren().removeAll(youLost, scoreResetRetry, noTime, scoreLog, scoreLogClear, scoreLogBonus, bonus, waveClearedText, graveRespawning, graveRespawned, youWon, noRanTime, beatingTheGame );
-        bonus.setTranslateX(0);
+        gameComponents.getChildren().removeAll(youLost, scoreResetRetry, noTime, scoreLog, scoreLogClear, scoreLogBonus, bonus, waveClearedText, graveRespawning, graveRespawned, youWon, noRanTime, beatingTheGame);
         score.setText("Score: " + "0".repeat(numOfZeroes));
         int numberOfZeroes = (difficulty == Difficulty.FREEPLAY ? 6 : 5) - String.valueOf(playerHighScores.get(Difficulty.indexOf(difficulty))).split("").length;
 

@@ -7,21 +7,32 @@ import javafx.scene.shape.Shape;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.legoaggelos.app.GameStateHandler.xResolutionRatio;
+import static org.legoaggelos.app.GameStateHandler.yResolutionRatio;
+
 public abstract class  Character {
     protected Polygon character;
     public Character(Polygon polygon, double translateX, double translateY) {
         this.character = polygon;
-        this.character.setTranslateX(translateX);
-        this.character.setTranslateY(translateY);
+        this.character.setScaleX(polygon.getScaleX()*xResolutionRatio);
+        this.character.setScaleY(polygon.getScaleY()*yResolutionRatio);
+        this.character.setTranslateX(translateX*xResolutionRatio);
+        this.character.setTranslateY(translateY*yResolutionRatio);
         getCharacter().setFill(Color.GRAY);
     }
     public void changePosition(double newX, double newY){
-        this.character.setTranslateX(newX);
-        this.character.setTranslateY(newY);
+        this.character.setTranslateX(newX*xResolutionRatio);
+        this.character.setTranslateY(newY*yResolutionRatio);
     }
 
     public ArrayList<Double> getPosition(){
         return new ArrayList<>(List.of(character.getTranslateX(),character.getTranslateY()));
+    }
+    public void moveX(double amount) {
+        this.character.setTranslateX(this.character.getTranslateX() + amount*xResolutionRatio);
+    }
+    public void moveY(double amount) {
+        this.character.setTranslateY(this.character.getTranslateY() + amount*yResolutionRatio);
     }
     public double getTranslateX(){
         return character.getTranslateX();
@@ -52,10 +63,10 @@ public abstract class  Character {
     }
 
     public void setTranslateX(double translateX) {
-        character.setTranslateX(translateX);
+        character.setTranslateX(translateX*xResolutionRatio);
     }
     public void setTranslateY(double translateY) {
-        character.setTranslateY(translateY);
+        character.setTranslateY(translateY*yResolutionRatio);
     }
 
 }

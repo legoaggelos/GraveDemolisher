@@ -3,6 +3,7 @@ package org.legoaggelos.app;
 import javafx.scene.Node;
 import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import org.legoaggelos.app.gui.GraveDemolisherGuiComponentsHolder;
 import org.legoaggelos.file.FileHandler;
@@ -33,6 +34,8 @@ import static org.legoaggelos.app.Application.logger;
 import static org.legoaggelos.file.FileHandler.loadHighScores;
 
 public class GameStateHandler {
+    public static final double xResolutionRatio = Screen.getPrimary().getBounds().getMaxX() / 1920;
+    public static double yResolutionRatio = Screen.getPrimary().getBounds().getMaxY() / 1080;
     private final ChangeableBoolean p2HasJoinedSession = new ChangeableBoolean(false);
     private final SecureRandom random = new SecureRandom();
     private static final int maxScore = 99999;
@@ -73,12 +76,45 @@ public class GameStateHandler {
         this.stage = stage;
         loadDifficulties();
         playerHighScores = loadHighScores();
-        guiHolder = new GraveDemolisherGuiComponentsHolder(stage, time);
+        soundHandler = new SoundHandler(List.of("/sounds/TNS Vret - track 1.m4a")); //TODO: add loading sound from files
+        guiHolder = new GraveDemolisherGuiComponentsHolder(stage, time, xResolutionRatio, yResolutionRatio, soundHandler);
         entityHandler = new EntityHandler(guiHolder.getGameComponents());
-        soundHandler = new SoundHandler(List.of("/sounds/TNS Vret - track 1.m4a"));
         initialiseQuitFunctions();
         initialiseDifficultySelectFunctions();
         initialiseLeaveGame();
+        initialiseSoundFunctions();
+    }
+
+    private String generateVolumeText(double volume) {
+        int decVolume = Math.round((float) volume * 10); //Multiply by 10, to avoid dealing with float division and potential errors(other way would have been volume / 0.1). According to MediaPlayer docs, volume is always 0.0-1.0, so it can be converted to float(we only need 0.1 accuracy here)
+        return 10*decVolume + "% [ " + "-".repeat(decVolume) + " ".repeat(10 - decVolume) + " ]"; //TODO Fix the incosistent spacing
+    }
+
+    private void initialiseSoundFunctions() {
+        guiHolder.getVolumeState().setText(generateVolumeText(0.3));
+        guiHolder.getVolumeSwitch().setText("On");
+
+        guiHolder.getVolumeDown().setOnMouseClicked(event -> {
+            soundHandler.changeVolume(-0.1);
+            guiHolder.getVolumeState().setText(generateVolumeText(soundHandler.getVolume()));
+        });
+
+        guiHolder.getVolumeUp().setOnMouseClicked(event -> {
+            soundHandler.changeVolume(0.1);
+            guiHolder.getVolumeState().setText(generateVolumeText(soundHandler.getVolume()));
+        });
+
+        guiHolder.getVolumeSwitch().setOnMouseClicked(
+                event -> {
+                    if (guiHolder.getVolumeSwitch().getText().trim().equalsIgnoreCase("On")) {
+                        guiHolder.getVolumeSwitch().setText("Off");
+                        soundHandler.muteAll();
+                    } else {
+                        guiHolder.getVolumeSwitch().setText("On");
+                        soundHandler.unmuteAll();
+                    }
+                }
+        );
     }
 
     public SecureRandom getRandom() {
@@ -166,6 +202,11 @@ public class GameStateHandler {
     }
 
     public void difficultySelect(Difficulty difficulty) {
+        if (difficulty == Difficulty.FREEPLAY) {
+            guiHolder.getBonus().setTranslateX(430D * xResolutionRatio);
+        } else {
+            guiHolder.getBonus().setTranslateX(400D * xResolutionRatio);
+        }
         p2HasJoinedSession.setBool(false);
         emptyGravesCounter.resetCounter();
         guiHolder.resetWaveClearScoreLogTextOpacities();
@@ -189,6 +230,7 @@ public class GameStateHandler {
 
 
         stage.getScene().setRoot(guiHolder.getGameComponents());
+
     }
 
     public void initialiseDifficultySelectFunctions() {
@@ -270,9 +312,9 @@ public class GameStateHandler {
     }
 
     public void updateCurrentScore(long newScore) {
-        if ((newScore > 99999 && currentDifficulty != Difficulty.FREEPLAY) ||
-                (newScore > 999999)) {
-            guiHolder.getScoreLog().setText("Score: " + (currentDifficulty == Difficulty.FREEPLAY ? 999999 : 99999));
+        if ((newScore > maxScore && currentDifficulty != Difficulty.FREEPLAY) ||
+                (newScore > maxFreeplayScore)) {
+            guiHolder.getScoreLog().setText("Score: " + (currentDifficulty == Difficulty.FREEPLAY ? maxFreeplayScore : maxScore));
             return;
         }
         int numberOfZeroes = (currentDifficulty == Difficulty.FREEPLAY ? 6 : 5) - String.valueOf(newScore).length();
@@ -284,22 +326,22 @@ public class GameStateHandler {
         if (newScore <= playerHighScores.get(index)) {
             return;
         }
-        if ((newScore > 99999 && currentDifficulty != Difficulty.FREEPLAY) ||
-                (newScore > 999999)) {
-            playerHighScores.set(index, (currentDifficulty == Difficulty.FREEPLAY ? 999999 : 99999));
+        if ((newScore > maxScore && currentDifficulty != Difficulty.FREEPLAY) ||
+                (newScore > maxFreeplayScore)) {
+            playerHighScores.set(index, (currentDifficulty == Difficulty.FREEPLAY ? maxFreeplayScore : maxScore));
             return;
         }
         playerHighScores.set(index, (int) newScore);
         if (Long.parseLong(guiHolder.getHighScore().getText().split(" ")[2]) < playerHighScores.get(index)) {
             int numberOfZeroes = (currentDifficulty == Difficulty.FREEPLAY ? 6 : 5) - String.valueOf(newScore).length();
             System.out.println(playerHighScores.get(index));
-            guiHolder.getHighScore().setText("High Score: " +  "0".repeat(Math.max(0, numberOfZeroes)) + playerHighScores.get(index));
+            guiHolder.getHighScore().setText("High Score: " + "0".repeat(Math.max(0, numberOfZeroes)) + playerHighScores.get(index));
         }
     }
 
     public void updateScore(long newScore, Difficulty difficulty) {
         updateCurrentScore(newScore);
-         updateHighScore(newScore);
+        updateHighScore(newScore);
     }
 
     public void tick() {
@@ -415,7 +457,7 @@ public class GameStateHandler {
 
                         //System.out.println(entityHandler.getGraves().size());
                         guiHolder.getGameComponents().getChildren().remove(v.getCharacter());
-                       //System.out.println("passed 3");
+                        //System.out.println("passed 3");
                         entityHandler.getGraves().remove(v);
                         //System.out.println("passed 4");
                         //System.out.println(entityHandler.getGraves().size());
@@ -515,7 +557,7 @@ public class GameStateHandler {
                     }*/
             //System.out.println(time.getInSeconds());
             if (time.getInSeconds() == timeInSeconds.get()) {//time in seconds is a semi-constant representing the max time for this difficulty, time is the current timer of the stage
-                for (Player  player : entityHandler.getNonNullPlayers()) {
+                for (Player player : entityHandler.getNonNullPlayers()) {
                     player.resetPlayerPosition();
                 }
                 guiHolder.removeGraves(entityHandler.getGraves());
