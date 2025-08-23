@@ -81,8 +81,8 @@ public class Player extends Character {
         super.setCharacter((Polygon) null);
         playerHead = new PlayerPart(new RectanglePolygonFactory(headWidth, headHeight, headTranslateX, headTranslateY).getNewPolygon());
         playerBody = new PlayerPart(new RectanglePolygonFactory(bodyWidth, bodyHeight, bodyTranslateX, bodyTranslateY).getNewPolygon());
-        System.out.println(bodyTranslateX +" "+ bodyTranslateY);
-        System.out.println(playerBody.getTranslateX() +" "+ playerBody.getTranslateY());
+        //System.out.println(bodyTranslateX +" "+ bodyTranslateY);
+        //System.out.println(playerBody.getTranslateX() +" "+ playerBody.getTranslateY());
 
         playerLegOne = new PlayerPart(new RectanglePolygonFactory(playerLegWidth, playerLegHeight, legOneTranslateX, legOneTranslateY).getNewPolygon());
         playerLegTwo = new PlayerPart(new RectanglePolygonFactory(playerLegWidth, playerLegHeight, legOneTranslateX + legDistance, legOneTranslateY).getNewPolygon());
@@ -240,7 +240,7 @@ public class Player extends Character {
             graves/*graves input of method*/.forEach(v -> {
                 if (v.colliding(playerCanMoveUtility)) {
                     isGraveInTheWay.setBool(true);//input in method
-                    System.out.println(1);
+                    //System.out.println(1);
                 }
             });
 

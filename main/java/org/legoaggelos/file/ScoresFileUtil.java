@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -39,8 +40,19 @@ public class ScoresFileUtil {
     public static boolean areFileContentsValid(String fileContents){
         String[] splitFileContents=fileContents.split(",");
         ArrayList<Integer> splitFileContentsInt=new ArrayList<>();
-        if(splitFileContents.length!=10){
+        if(splitFileContents.length!=10 && splitFileContents.length!=2){
             return false;
+        }
+        if (splitFileContents.length==2){
+            try {
+                splitFileContentsInt.add(Integer.parseInt(splitFileContents[0]));
+            } catch (NumberFormatException e) {
+                return false;
+            }
+            if (splitFileContentsInt.getFirst() < 0 || splitFileContentsInt.getFirst() > 10){
+                return false;
+            }
+            return Objects.equals(splitFileContents[1], "true") || Objects.equals(splitFileContents[1], "false");
         }
         try{
             splitFileContentsInt.addAll(Arrays.stream(splitFileContents).map(Integer::parseInt).toList());

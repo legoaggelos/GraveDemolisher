@@ -5,6 +5,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.util.Pair;
 import org.legoaggelos.app.gui.GraveDemolisherGuiComponentsHolder;
 import org.legoaggelos.file.FileHandler;
 import org.legoaggelos.objects.Grave;
@@ -32,6 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.legoaggelos.app.Application.logger;
 import static org.legoaggelos.file.FileHandler.loadHighScores;
+import static org.legoaggelos.file.FileHandler.loadVolumeSettings;
 
 public class GameStateHandler {
     public static final double xResolutionRatio = Screen.getPrimary().getBounds().getMaxX() / 1920;
@@ -76,13 +78,21 @@ public class GameStateHandler {
         this.stage = stage;
         loadDifficulties();
         playerHighScores = loadHighScores();
-        soundHandler = new SoundHandler(List.of("/sounds/TNS Vret - track 1.m4a")); //TODO: add loading sound from files
+        Pair<Double, Boolean> volumeSettings = loadVolumeSettings();
+        soundHandler = new SoundHandler(List.of("/sounds/TNS Vret - track 1.m4a"));
+        //System.out.println(volumeSettings.getKey());
+        soundHandler.setVolume(volumeSettings.getKey());
+        if (volumeSettings.getValue()) {
+            soundHandler.unmuteAll();
+        } else {
+            soundHandler.muteAll();
+        }
         guiHolder = new GraveDemolisherGuiComponentsHolder(stage, time, xResolutionRatio, yResolutionRatio, soundHandler);
         entityHandler = new EntityHandler(guiHolder.getGameComponents());
         initialiseQuitFunctions();
         initialiseDifficultySelectFunctions();
         initialiseLeaveGame();
-        initialiseSoundFunctions();
+        initialiseSoundFunctions(volumeSettings.getValue());
     }
 
     private String generateVolumeText(double volume) {
@@ -90,9 +100,9 @@ public class GameStateHandler {
         return 10*decVolume + "% [ " + "-".repeat(decVolume) + " ".repeat(10 - decVolume) + " ]"; //TODO Fix the incosistent spacing
     }
 
-    private void initialiseSoundFunctions() {
-        guiHolder.getVolumeState().setText(generateVolumeText(0.3));
-        guiHolder.getVolumeSwitch().setText("On");
+    private void initialiseSoundFunctions(boolean volumeSwitch) {
+        guiHolder.getVolumeState().setText(generateVolumeText(soundHandler.getVolume()));
+        guiHolder.getVolumeSwitch().setText(volumeSwitch ? "On" : "Off");
 
         guiHolder.getVolumeDown().setOnMouseClicked(event -> {
             soundHandler.changeVolume(-0.1);
@@ -193,10 +203,12 @@ public class GameStateHandler {
     public void initialiseQuitFunctions() {
         guiHolder.getQuit().setOnMouseClicked(event -> {
             FileHandler.overwriteHighScores(playerHighScores);
+            FileHandler.overwriteOptions((int) Math.round(soundHandler.getVolume()*10), guiHolder.getVolumeSwitch().getText().trim().equalsIgnoreCase("On"));
             stage.close();
         });
         guiHolder.getQuitGame().setOnMouseClicked(event -> {
             FileHandler.overwriteHighScores(playerHighScores);
+            FileHandler.overwriteOptions((int) Math.round(soundHandler.getVolume()*10), guiHolder.getVolumeSwitch().getText().trim().equalsIgnoreCase("On"));
             stage.close();
         });
     }
@@ -334,7 +346,7 @@ public class GameStateHandler {
         playerHighScores.set(index, (int) newScore);
         if (Long.parseLong(guiHolder.getHighScore().getText().split(" ")[2]) < playerHighScores.get(index)) {
             int numberOfZeroes = (currentDifficulty == Difficulty.FREEPLAY ? 6 : 5) - String.valueOf(newScore).length();
-            System.out.println(playerHighScores.get(index));
+            //System.out.println(playerHighScores.get(index));
             guiHolder.getHighScore().setText("High Score: " + "0".repeat(Math.max(0, numberOfZeroes)) + playerHighScores.get(index));
         }
     }

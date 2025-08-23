@@ -1,5 +1,6 @@
 package org.legoaggelos.file;
 
+import javafx.util.Pair;
 import org.legoaggelos.util.ArrayListUtils;
 
 import java.io.File;
@@ -17,49 +18,66 @@ import static org.legoaggelos.file.ScoresFileUtil.getFileContents;
 
 public class FileHandler {
     private static final Path scoresFile = Paths.get(ScoresFileUtil.determinePath().toString());
-    public static boolean overwriteHighScores(List<Integer> playerHighScores) {
+    private static final Path optionsFile = Paths.get(scoresFile.toString().replace("scores.csv", "options.txt"));
+    public static boolean overwriteFile(String text, Path file) {
         try {
-            if (!scoresFile.toFile().delete()) {
-                throw new IOException("File could not be deleted");
+            if (!file.toFile().delete()) {
+                logger.error(("File could not be deleted"));
+                return false;
             }
             logger.info("Deleted file. Recreating it.");
-            scoresFile.toFile().createNewFile();
-            Files.write(scoresFile, ((ArrayListUtils.toString(playerHighScores)).getBytes()));
+            file.toFile().createNewFile();
+            Files.write(file, text.getBytes());
             return true;
         } catch (IOException exception) {
             logger.error("Unable to save high scores", exception);
             return false;
         }
     }
-    public static List<Integer> loadHighScores() {
-        Path scoresFile = Paths.get(ScoresFileUtil.determinePath().toString());
-        List<Integer> newList = new ArrayList<>();
+    public static boolean overwriteOptions(int volume, boolean toggle) {
+        return overwriteFile(volume + "," + toggle, optionsFile);
+    }
+    public static boolean overwriteHighScores(List<Integer> playerHighScores) {
+        return overwriteFile((ArrayListUtils.toString(playerHighScores)),scoresFile);
+    }
+    public static Pair<Double, Boolean> loadVolumeSettings() {
+        String string = loadFile(optionsFile, new File(optionsFile.toString().replace("options.txt", "")),"3,true");
+        return new Pair<>(Double.parseDouble(string.split(",")[0])/10D, Boolean.parseBoolean(string.split(",")[1]));
+    }
+    public static String loadFile(Path file, File directory, String defaultString) {
         try {
-            File directory = new File(scoresFile.toString().replace("scores.csv", ""));
             directory.mkdirs();
-            if (scoresFile.toFile().createNewFile()) {
-                logger.info("scores.csv file created");
-                Files.write(scoresFile, ("0, 0, 0, 0, 0 ,0, 0, 0, 0, 0").getBytes());
-                newList.addAll(Arrays.asList(0, 0, 0, 0, 0 ,0, 0, 0, 0, 0));
-                return newList;
+            if (file.toFile().createNewFile()) {
+                logger.info(file.getFileName().toFile().toString()+ " file created");
+                Files.write(file, defaultString.getBytes());
+                return defaultString;
             } else {
-                logger.info("scores.csv file exists. Trying to read from it.");
-                if (areFileContentsValid(scoresFile)) {
+                logger.info(file.getFileName().toFile().toString()+" file exists. Trying to read from it.");
+                if (areFileContentsValid(file)) {
                     //playerHighScores.clear();
                     //playerHighScores.addAll(Arrays.stream(getFileContents(scoresFile).split(",")).map(Integer::parseInt).toList());
-                    newList.addAll(Arrays.stream(getFileContents(scoresFile).split(",")).map(Integer::parseInt).toList());
-                    return newList;
+                    return getFileContents(file);
                 } else {
-                    newList.addAll(Arrays.asList(0, 0, 0, 0, 0 ,0, 0, 0, 0, 0));
-                    return newList;
+                    return defaultString;
                 }
             }
         } catch (IOException ioException) {
-            logger.error("IOException caught when doing initial file procedure. Game will continue to work, but high scores may be unexpected.", ioException);
+            logger.error("IOException caught when doing initial file procedure. Game will continue to work, but high scores/volume settings may be unexpected.", ioException);
 
         }
-        newList.addAll(Arrays.asList(0, 0, 0, 0, 0 ,0, 0, 0, 0, 0));
-        return newList;
+        return defaultString;
+    }
+    public static List<Integer> highScoresFromString(String string) {
+        String[] splitFileContents=string.split(",");
+        ArrayList<Integer> splitFileContentsInt=new ArrayList<>();
+        assert splitFileContents.length==10;
+        for (String str : splitFileContents) {
+            splitFileContentsInt.add(Integer.parseInt(str));
+        }
+        return splitFileContentsInt;
+    }
+    public static List<Integer> loadHighScores() {
+        return highScoresFromString(loadFile(scoresFile, new File(scoresFile.toString().replace("scores.csv", "")), "0, 0, 0, 0, 0, 0, 0, 0, 0, 0"));
     }
 
 }
