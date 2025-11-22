@@ -32,7 +32,7 @@ public class EntityHandler {
     public void resetGraves() {
         graves.clear();
         graves.addAll(GraveUtil.graveGrid(14, 6, 0, 0, 80, 135, 128, 165));
-        graves.stream().map(org.legoaggelos.objects.entities.Character::getCharacter).forEach(Node::toBack);
+        graves.parellelStream().map(org.legoaggelos.objects.entities.Character::getCharacter).forEach(Node::toBack);
     }
     public void hidePlayerHands() {
         player.changeHand(HandPosition.HIDE);
@@ -86,3 +86,4 @@ public class EntityHandler {
         }
     }
 }
+
